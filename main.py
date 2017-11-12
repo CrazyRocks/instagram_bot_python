@@ -4,14 +4,13 @@ import logic
 import random
 import re
 import requests
-import string
 import sys
 import time
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-head={'X-IG-Capabilities':'3wI=',
+head={'X-IG-Capabilities':'36rXAw==',
 'User-Agent':'Instagram 22.0.0.10.68 (iPad5,4; iOS 10_2; en_DE; en-GB; scale=2.00; gamut=normal; 640x960) AppleWebKit/420+'}
 
 class Instagram(object):
@@ -23,12 +22,47 @@ class Instagram(object):
 		self.s.verify=False
 		self.s.headers.update(head)
 		self.uid=0
-		self.base_api='https://i.instagram.com/api/v1/'
+		self.csfr=None
+		self.base_api='https://i.instagram.com'
 
 	def login(self):
-		data=logic._generate_body('{"username":"%s","password":"%s","device_id":"%s","login_attempt_count":"0"}'%(self.user,self.passw,self.device,))
-		r=self.s.post(self.base_api+'accounts/login/',data=data)
-		return json.loads(r.content)
+		data={}
+		data['username']=self.user
+		data['password']=self.passw
+		data['device_id']=self.device
+		data['login_attempt_count']='0'
+		data=logic._generate_body(data)
+		r=self.s.post(self.base_api+'/api/v1/accounts/login/',data=data)
+		res= json.loads(r.content)
+		self.uid=res['logged_in_user']['pk']
+		self.csfr=self.s.cookies['csrftoken']
+		return res
+	
+	def reels_tray(self):
+		return json.loads(self.s.get(self.base_api+'/api/v1/feed/reels_tray/').content)
+	
+	def seen(self,str1,str2):
+		data={}
+		data['_csrftoken']=self.csfr
+		data['_uuid']=self.device
+		data['_uid']=self.uid
+		data['reels']={}
+		data['live_vods']={str1:[str2]}
+		data=logic._generate_body(data)
+		return self.s.post(self.base_api+'/api/v2/media/seen/?reel=1&live_vod=0',data=data)
+	
+	def watchStories(self):
+		stories=self.reels_tray()['tray']
+		for i in stories:
+			pk=i['user']['pk']
+			if 'items' in i:
+				items=i['items']
+				for o in items:
+					id=o['id']
+					taken_at=o['taken_at']
+					str1='%s_%s'%(id,pk)
+					str2='%s_%s'%(taken_at,int(time.time()))
+					self.seen(str1,str2)
 	
 	def liked_posts(self):
 		r=self.s.get(base_api+'feed/liked/')
@@ -55,6 +89,7 @@ if __name__ == '__main__':
 		i=Instagram(sys.argv[1],sys.argv[2])
 		login_data=i.login()
 		print 'user:%s, user_id:%s'%(login_data['logged_in_user']['username'],login_data['logged_in_user']['pk'])
+		i.watchStories()
 		exit(1)
 		while(True):
 			print '[!] removing likes'

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import config
 import json
 import logic
@@ -10,8 +11,7 @@ import time
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-head={'X-IG-Capabilities':'36rXAw==',
-'User-Agent':'Instagram 22.0.0.10.68 (iPad5,4; iOS 10_2; en_DE; en-GB; scale=2.00; gamut=normal; 640x960) AppleWebKit/420+'}
+head={'X-IG-Connection-Type':'WiFi','X-IG-Capabilities':'36r/Vw==','X-IG-App-ID':'124024574287414','X-IG-ABR-Connection-Speed-KBPS':'0','User-Agent':'Instagram 43.0.0.13.91 (iPad5,4; iOS 10_2; en_DE; en-GB; scale=2.00; gamut=normal; 640x960) AppleWebKit/420+','X-IG-Bandwidth-Speed-KBPS':'0.000','X-IG-Connection-Speed':'-1kbps','X-FB-HTTP-Engine':'Liger'}
 
 class Instagram(object):
 	def __init__(self,user,passw):
